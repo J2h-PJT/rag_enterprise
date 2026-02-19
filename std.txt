@@ -1,0 +1,54 @@
+🎯 Core 설계 원칙
+core는 반드시:
+외부 라이브러리 의존성 캡슐화
+교체 가능해야 함 (OpenAI ↔ Local ↔ API)
+서비스 레이어는 구현체를 몰라야 함
+팩토리 패턴 사용
+
+이제 core 3대 엔진을 “교체 가능 + 확장 가능” 구조로 고정하자.
+목표는 단순 구현이 아니라:
+core 3대 엔진 = embeddings/ llm/ reranker
+✔ Provider 교체 가능
+✔ 추후 OpenAI / API / GPU 확장 가능
+✔ 서비스 레이어는 구현체를 모르게
+✔ 설정은 config에서 통제
+🧠 핵심 설계 철학
+Retriever는:                🔍 "검색 전략 엔진"
+RetrievalService는:         🧩 "검색 파이프라인 조립"
+Filter는:                   📐 "정책 적용"
+QAService는:                🗣 "답변 생성 오케스트레이터"
+이 경계가 명확해야 나중에 절대 안 꼬인다.
+🔥 전체 Dependency Wiring (의존성 연결 설계)
+🎯 1️⃣ 목표 아키텍처
+API Router
+    ↓
+QAService
+    ↓
+RetrievalService
+    ↓
+Retriever
+    ↓
+VectorStore
+
+QAService
+    ↓
+Reranker
+    ↓
+ContextManager
+    ↓
+LLM
+
+업로드 쪽은:
+Upload API
+    ↓
+JobService
+    ↓
+Worker
+    ↓
+PDFProcessor
+    ↓
+AdaptiveChunker
+    ↓
+VectorStore + DB
+🏗 2️⃣ 가장 중요한 것: Core Engine 통합
+모든 의존성은 Core에서 생성되고 주입되어야 한다.
