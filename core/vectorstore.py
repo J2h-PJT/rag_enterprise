@@ -1,22 +1,14 @@
-# ✔ embedding 교체 가능
-# ✔ DB engine 외부 주입
-
-from langchain_postgres import PGVector
-from config import COLLECTION_NAME
-from core.embeddings import EmbeddingFactory
-
+from langchain_community.vectorstores import PGVector
+from sqlalchemy import text
 
 class VectorStoreFactory:
-
     @staticmethod
-    def create(engine, embedding_provider="hf"):
-
-        embeddings = EmbeddingFactory.create(embedding_provider)
-
+    def create(config, embeddings, engine):
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            conn.commit()
         return PGVector(
-            connection=engine,
-            collection_name=COLLECTION_NAME,
-            embeddings=embeddings,
-            use_jsonb=True,
+            connection_string=config.DB_URL,
+            embedding_function=embeddings,
+            collection_name="documents"
         )
-

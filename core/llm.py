@@ -1,29 +1,29 @@
-# ✔ get_model()로 LangChain 객체 반환
-# ✔ Streaming은 LangChain에서 chain.stream 사용
+"""
+core/llm.py
 
-from langchain_community.chat_models import ChatOllama
-from config import LLM_MODEL
-from core.interfaces.llm_base import BaseLLM
+Ollama 기반 LLM 설정 모듈
+LangChain 0.2.x 전용
+"""
 
-
-class LocalLLM(BaseLLM):
-
-    def __init__(self):
-        self.model = ChatOllama(
-            model=LLM_MODEL,
-            temperature=0.1,
-        )
-
-    def get_model(self):
-        return self.model
+from langchain_ollama import OllamaLLM
 
 
-class LLMFactory:
+def get_llm(
+    model: str = "llama3",
+    temperature: float = 0.1,
+):
+    """
+    Ollama LLM 반환
 
-    @staticmethod
-    def create(provider: str = "local") -> BaseLLM:
+    Args:
+        model (str): Ollama에 pull 되어있는 모델명
+        temperature (float): 생성 다양성
 
-        if provider == "local":
-            return LocalLLM()
+    Returns:
+        OllamaLLM
+    """
+    return OllamaLLM(
+        model=model,
+        temperature=temperature,
+    )
 
-        raise ValueError(f"Unsupported LLM provider: {provider}")

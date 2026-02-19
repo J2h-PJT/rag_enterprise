@@ -1,40 +1,41 @@
-# 1️⃣ Context Window Manager 설계
-# 역할:
-# 토큰 수 계산
-# 초과 시 문서 제거
-# 혹은 compression 호출
+"""
+services/context_manager.py
 
-# ✔ 상위 문서부터 채운다
-# ✔ 답변 공간은 reserved_tokens로 남긴다
+Chat History + Context 관리 모듈
+OpenAI 의존성 제거 (tiktoken 사용 안함)
+"""
 
-from transformers import AutoTokenizer
-from config import LLM_MODEL
+from typing import List
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 
 
-class ContextWindowManager:
+class ContextManager:
+    """
+    대화 히스토리 관리 클래스
+    """
 
-    def __init__(self, max_tokens=4000, reserved_tokens=1000):
-        self.max_tokens = max_tokens
-        self.reserved_tokens = reserved_tokens
-        self.tokenizer = AutoTokenizer.from_pretrained(LLM_MODEL)
+    def __init__(self, max_history: int = 10):
+        self.max_history = max_history
+        self.history: List[BaseMessage] = []
 
-    def count_tokens(self, text: str) -> int:
-        return len(self.tokenizer.encode(text))
+    def add_user_message(self, content: str):
+        self.history.append(HumanMessage(content=content))
+        self._trim_history()
 
-    def trim(self, docs):
+    def add_ai_message(self, content: str):
+        self.history.append(AIMessage(content=content))
+        self._trim_history()
 
-        total = 0
-        allowed = self.max_tokens - self.reserved_tokens
-        selected = []
+    def get_history(self) -> List[BaseMessage]:
+        return self.history
 
-        for doc in docs:
-            tokens = self.count_tokens(doc.page_content)
+    def clear(self):
+        self.history = []
 
-            if total + tokens > allowed:
-                break
-
-            selected.append(doc)
-            total += tokens
-
-        return selected
+    def _trim_history(self):
+        """
+        최근 max_history 개수만 유지
+        """
+        if len(self.history) > self.max_history * 2:
+            self.history = self.history[-self.max_history * 2 :]
 
